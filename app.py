@@ -6,12 +6,14 @@ import os
 
 app = Flask(__name__)
 
-# Database setup
+DB_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'osint.db')
+
+# Ensure DB/schema
 def init_db():
-    conn = sqlite3.connect('osint.db')
+    conn = sqlite3.connect(DB_PATH)
     c = conn.cursor()
     c.execute('''CREATE TABLE IF NOT EXISTS findings (
-                    id INTEGER PRIMARY KEY,
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
                     type TEXT,
                     value TEXT,
                     source TEXT,
@@ -21,112 +23,182 @@ def init_db():
     conn.commit()
     conn.close()
 
-# Pre-load sample data
-def preload_data():
-    conn = sqlite3.connect('osint.db')
+init_db()
+
+# ---------------- Simulators ----------------
+def simulate_shodan(query):
+    return [
+        ('IP', '8.8.8.8', 'Shodan', 37.3861, -122.0839),
+        ('IP', '192.168.1.1', 'Shodan', 37.7749, -122.4194),
+        ('IP', '203.0.113.1', 'Shodan', 35.6762, 139.6503)
+    ]
+
+def simulate_theharvester(query):
+    # produce an email based on query or a generic
+    domain = query.split('@')[-1] if '@' in query else 'example.com'
+    return [('Email', f'admin@{domain}', 'theHarvester', None, None)]
+
+def simulate_googledorks(query):
+    return [('Domain', f'{query}.example', 'Google Dorks', None, None)]
+
+def simulate_maltego(query):
+    # Maltego often returns linked entities (domains, emails, IPs). Simulate a mix
+    return [
+        ('Domain', f'{query}', 'Maltego', None, None),
+        ('IP', '203.0.113.5', 'Maltego', 35.6895, 139.6917),
+        ('Email', f'contact@{query}', 'Maltego', None, None)
+    ]
+
+# ---------------- Utilities ----------------
+def regenerate_heatmap():
+    conn = sqlite3.connect(DB_PATH)
     c = conn.cursor()
-    # Check if data already exists
-    c.execute("SELECT COUNT(*) FROM findings")
-    if c.fetchone()[0] == 0:
-        sample_data = [
-            ('IP', '192.168.1.1', 'Shodan', 37.7749, -122.4194),  # San Francisco
-            ('IP', '8.8.8.8', 'Shodan', 37.3860, -122.0840),     # Mountain View
-            ('Email', 'test@example.com', 'theHarvester', None, None),
-            ('Domain', 'malicious-site.com', 'Google Dorks', None, None),
-            ('IP', '203.0.113.1', 'Shodan', 35.6762, 139.6503),  # Tokyo
-        ]
-        c.executemany("INSERT INTO findings (type, value, source, lat, lon) VALUES (?, ?, ?, ?, ?)", sample_data)
-        conn.commit()
+    c.execute("SELECT lat, lon, value FROM findings WHERE lat IS NOT NULL AND lon IS NOT NULL")
+    rows = c.fetchall()
     conn.close()
 
-init_db()
-preload_data()
+    # If there are coordinates, generate folium map. Otherwise create minimal placeholder
+    m = folium.Map(location=[20, 0], zoom_start=2)
+    for lat, lon, val in rows:
+        folium.Marker([lat, lon], popup=val).add_to(m)
 
-# Mocked OSINT Functions (return sample data)
-def shodan_search(query):
-    return [
-        {'type': 'IP', 'value': '192.168.1.1', 'source': 'Shodan', 'lat': 37.7749, 'lon': -122.4194},
-        {'type': 'IP', 'value': '8.8.8.8', 'source': 'Shodan', 'lat': 37.3860, 'lon': -122.0840}
-    ]
+    os.makedirs('static', exist_ok=True)
+    m.save(os.path.join('static', 'heatmap.html'))
 
-def theharvester_search(domain):
-    return [
-        {'type': 'Email', 'value': 'admin@' + domain, 'source': 'theHarvester'},
-        {'type': 'Domain', 'value': domain, 'source': 'theHarvester'}
-    ]
-
-def google_dorks_search(query):
-    return [
-        {'type': 'Domain', 'value': 'example.com', 'source': 'Google Dorks'},
-        {'type': 'Domain', 'value': 'test.com', 'source': 'Google Dorks'}
-    ]
-
+# ---------------- Routes ----------------
 @app.route('/')
 def index():
     return render_template('index.html')
 
 @app.route('/collect', methods=['POST'])
 def collect():
-    query = request.form['query']
-    tool = request.form['tool']
-    findings = []
-    if tool == 'shodan':
-        findings = shodan_search(query)
-    elif tool == 'theharvester':
-        findings = theharvester_search(query)
-    elif tool == 'google_dorks':
-        findings = google_dorks_search(query)
-    
-    # Store in DB
-    conn = sqlite3.connect('osint.db')
-    c = conn.cursor()
-    for f in findings:
-        c.execute("INSERT INTO findings (type, value, source, lat, lon) VALUES (?, ?, ?, ?, ?)",
-                  (f['type'], f['value'], f['source'], f.get('lat'), f.get('lon')))
-    conn.commit()
-    conn.close()
-    return jsonify({'status': 'success', 'findings': findings})
+    """
+    Expects JSON body: {"query": "...", "tool": "shodan"|"theharvester"|"googledorks"|"maltego"}
+    Returns JSON: {'status': 'success', 'inserted': n} or {'error': ...}
+    """
+    try:
+        data = request.get_json(force=True)
+        query = data.get('query')
+        tool = data.get('tool')
 
-@app.route('/search', methods=['GET'])
-def search():
-    keyword = request.args.get('keyword', '')
-    conn = sqlite3.connect('osint.db')
-    c = conn.cursor()
-    c.execute("SELECT * FROM findings WHERE value LIKE ?", ('%' + keyword + '%',))
-    results = c.fetchall()
-    conn.close()
-    return jsonify(results)
+        if not query or not tool:
+            return jsonify({'error': 'Missing query or tool'}), 400
 
-@app.route('/heatmap')
-def heatmap():
-    conn = sqlite3.connect('osint.db')
-    c = conn.cursor()
-    c.execute("SELECT lat, lon, value FROM findings WHERE lat IS NOT NULL AND lon IS NOT NULL")
-    points = c.fetchall()
-    conn.close()
-    
-    # Generate Folium map
-    m = folium.Map(location=[20, 0], zoom_start=2)
-    for lat, lon, value in points:
-        folium.Marker([lat, lon], popup=value).add_to(m)
-    m.save('static/heatmap.html')
-    return send_file('static/heatmap.html')
+        # choose simulator
+        if tool == 'shodan':
+            results = simulate_shodan(query)
+        elif tool == 'theharvester':
+            results = simulate_theharvester(query)
+        elif tool == 'googledorks' or tool == 'google_dorks':
+            results = simulate_googledorks(query)
+        elif tool == 'maltego':
+            results = simulate_maltego(query)
+        else:
+            return jsonify({'error': 'Invalid tool specified'}), 400
 
-@app.route('/export_pdf')
-def export_pdf():
-    conn = sqlite3.connect('osint.db')
+        conn = sqlite3.connect(DB_PATH)
+        c = conn.cursor()
+
+        inserted = 0
+        # Insert if not duplicate (same type+value+source)
+        for rec in results:
+            rtype, rvalue, rsource, rlat, rlon = rec
+            c.execute("SELECT 1 FROM findings WHERE type=? AND value=? AND source=? LIMIT 1", (rtype, rvalue, rsource))
+            if c.fetchone():
+                # skip duplicate
+                continue
+            c.execute("INSERT INTO findings (type, value, source, lat, lon) VALUES (?, ?, ?, ?, ?)",
+                      (rtype, rvalue, rsource, rlat, rlon))
+            inserted += 1
+
+        conn.commit()
+        conn.close()
+
+        # regenerate map
+        regenerate_heatmap()
+
+        return jsonify({'status': 'success', 'inserted': inserted, 'requested': len(results)}), 200
+
+    except Exception as e:
+        print("Error in /collect:", e)
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/findings', methods=['GET'])
+def findings():
+    # returns list of objects with id, type, value, source, lat, lon
+    conn = sqlite3.connect(DB_PATH)
     c = conn.cursor()
-    c.execute("SELECT * FROM findings")
-    findings = c.fetchall()
+    c.execute("SELECT id, type, value, source, lat, lon FROM findings ORDER BY id DESC")
+    rows = c.fetchall()
     conn.close()
-    
-    html = '<html><body><h1>OSINT Findings Report</h1><ul>'
-    for f in findings:
-        html += f'<li>{f[1]}: {f[2]} (Source: {f[3]})</li>'
-    html += '</ul></body></html>'
-    
-    pdfkit.from_string(html, 'report.pdf')
-    return send_file('report.pdf', as_attachment=True)
+    out = []
+    for r in rows:
+        out.append({
+            'id': r[0],
+            'type': r[1],
+            'value': r[2],
+            'source': r[3],
+            'lat': r[4],
+            'lon': r[5]
+        })
+    return jsonify(out)
+
+@app.route('/delete', methods=['POST'])
+def delete_entry():
+    """
+    Expects JSON: {"id": 123}
+    """
+    try:
+        data = request.get_json(force=True)
+        fid = data.get('id')
+        if fid is None:
+            return jsonify({'error': 'Missing id'}), 400
+
+        conn = sqlite3.connect(DB_PATH)
+        c = conn.cursor()
+        c.execute("DELETE FROM findings WHERE id = ?", (fid,))
+        deleted = c.rowcount
+        conn.commit()
+        conn.close()
+
+        # regenerate map in case lat/lon removed
+        regenerate_heatmap()
+
+        if deleted:
+            return jsonify({'status': 'success', 'deleted': deleted}), 200
+        else:
+            return jsonify({'status': 'not_found'}), 404
+
+    except Exception as e:
+        print("Error in /delete:", e)
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/heatmap', methods=['GET'])
+def heatmap_route():
+    path = os.path.join('static', 'heatmap.html')
+    if os.path.isfile(path):
+        return send_file(path)
+    else:
+        # generate one on the fly (empty map)
+        regenerate_heatmap()
+        return send_file(path)
+
+@app.route('/export', methods=['GET'])
+def export_route():
+    conn = sqlite3.connect(DB_PATH)
+    c = conn.cursor()
+    c.execute("SELECT type, value, source FROM findings ORDER BY id ASC")
+    rows = c.fetchall()
+    conn.close()
+
+    html = "<h1>OSINT Findings Report</h1><table border='1' cellpadding='6'><tr><th>Type</th><th>Value</th><th>Source</th></tr>"
+    for r in rows:
+        html += f"<tr><td>{r[0]}</td><td>{r[1]}</td><td>{r[2]}</td></tr>"
+    html += "</table>"
+
+    pdf_path = os.path.join('osint_report.pdf')
+    pdfkit.from_string(html, pdf_path)
+    return send_file(pdf_path, as_attachment=True)
 
 if __name__ == '__main__':
     app.run(debug=True)
