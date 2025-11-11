@@ -1,198 +1,284 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta charset="utf-8" />
     <title>OSINT Threat Intelligence Dashboard</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
-    <link href="https://cdn.datatables.net/1.11.5/css/dataTables.bootstrap5.min.css" rel="stylesheet">
-    <link href="https://cdn.jsdelivr.net/npm/sweetalert2@11.4.8/dist/sweetalert2.min.css" rel="stylesheet">
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.2/dist/css/bootstrap.min.css" rel="stylesheet"/>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.2.0/css/all.min.css" rel="stylesheet"/>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
     <style>
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f8f9fa; }
-        .sidebar { height: 100vh; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; position: fixed; width: 250px; }
-        .sidebar a { color: white; text-decoration: none; padding: 15px; display: block; }
-        .sidebar a:hover { background: rgba(255,255,255,0.1); }
-        .main-content { margin-left: 250px; padding: 20px; }
-        .card { border: none; box-shadow: 0 4px 8px rgba(0,0,0,0.1); transition: transform 0.2s; }
-        .card:hover { transform: translateY(-5px); }
-        .btn-custom { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border: none; color: white; }
-        .btn-custom:hover { background: linear-gradient(135deg, #764ba2 0%, #667eea 100%); }
-        .dark-mode { background-color: #343a40; color: white; }
-        .dark-mode .card { background-color: #495057; color: white; }
-        .spinner { display: none; }
-        #heatmapFrame { border: none; width: 100%; height: 400px; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        .sidebar { height: 100vh; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; position: fixed; width: 240px; padding: 22px; }
+        .sidebar a { color: white; text-decoration: none; padding: 10px 0; display: block; }
+        .main { margin-left: 260px; padding: 20px; }
+        .card { border: none; box-shadow: 0 4px 8px rgba(0,0,0,0.05); }
+        .btn-custom { background: linear-gradient(135deg,#667eea 0%,#764ba2 100%); color: white; border: none; }
+        #heatmap-container iframe { width: 100%; height: 500px; border: none; border-radius: 8px; }
+        .toast-container { position: fixed; bottom: 1rem; right: 1rem; z-index: 1080; }
     </style>
 </head>
 <body>
-    <div class="sidebar">
-        <h4 class="p-3"><i class="fas fa-shield-alt"></i> OSINT Dashboard</h4>
-        <a href="#collect"><i class="fas fa-search"></i> Collect Data</a>
-        <a href="#search"><i class="fas fa-filter"></i> Search Findings</a>
-        <a href="#heatmap"><i class="fas fa-map"></i> Geolocation Heatmap</a>
-        <a href="#export"><i class="fas fa-file-pdf"></i> Export Report</a>
-        <button id="themeToggle" class="btn btn-outline-light mt-3 ms-3"><i class="fas fa-moon"></i> Dark Mode</button>
+
+<div class="sidebar">
+    <h4><i class="fas fa-shield-alt"></i> OSINT Dashboard</h4>
+    <hr style="border-color: rgba(255,255,255,0.15)">
+    <a href="#collect"><i class="fas fa-search"></i> Collect Data</a>
+    <a href="#search" class="mt-2"><i class="fas fa-filter"></i> Search Findings</a>
+    <a href="#heatmap" class="mt-2"><i class="fas fa-map"></i> Geolocation Heatmap</a>
+    <a href="#export" class="mt-2"><i class="fas fa-file-pdf"></i> Export Report</a>
+    <hr style="border-color: rgba(255,255,255,0.15)">
+    <button id="themeToggle" class="btn btn-outline-light btn-sm mt-2"><i class="fas fa-moon"></i> Dark Mode</button>
+</div>
+
+<div class="main">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h2><i class="fas fa-chart-line"></i> Threat Intelligence Dashboard</h2>
+        <small class="text-muted">Centralized OSINT collection & visualization</small>
     </div>
 
-    <div class="main-content">
-        <div class="d-flex justify-content-between align-items-center mb-4">
-            <h1><i class="fas fa-chart-line"></i> Threat Intelligence Dashboard</h1>
-            <small class="text-muted">Powered by OSINT Tools</small>
+    <!-- Collect -->
+    <div id="collect" class="card mb-4">
+        <div class="card-header bg-primary text-white"><strong><i class="fas fa-plus-circle"></i> Collect OSINT Data</strong></div>
+        <div class="card-body">
+            <form id="collectForm" class="row g-3">
+                <div class="col-md-7">
+                    <label for="query" class="form-label">Query</label>
+                    <input id="query" name="query" class="form-control" placeholder="Enter domain, IP, or email"/>
+                </div>
+                <div class="col-md-3">
+                    <label for="tool" class="form-label">Tool</label>
+                    <select id="tool" name="tool" class="form-select">
+                        <option value="shodan">Shodan (IPs)</option>
+                        <option value="theharvester">theHarvester (Emails/Domains)</option>
+                        <option value="googledorks">Google Dorks (Domains)</option>
+                        <option value="maltego">Maltego (Entities)</option>
+                    </select>
+                </div>
+                <div class="col-md-2 d-flex align-items-end">
+                    <button id="collectBtn" type="submit" class="btn btn-custom w-100"><i class="fas fa-play"></i> Collect</button>
+                </div>
+                <div class="col-12" style="display:none;" id="collectSpinnerWrap">
+                    <div class="spinner-border text-primary" role="status"></div>
+                    <small class="text-muted ms-2">Collecting...</small>
+                </div>
+            </form>
         </div>
+    </div>
 
-        <!-- Data Collection -->
-        <div id="collect" class="card mb-4">
-            <div class="card-header bg-primary text-white">
-                <h5><i class="fas fa-plus-circle"></i> Collect OSINT Data</h5>
+    <!-- Search & Manage -->
+    <div id="search" class="card mb-4">
+        <div class="card-header bg-success text-white"><strong><i class="fas fa-search"></i> Search & Manage Findings</strong></div>
+        <div class="card-body">
+            <div class="mb-3 row">
+                <div class="col-md-6">
+                    <input id="searchKeyword" class="form-control" placeholder="Search by keyword..."/>
+                </div>
+                <div class="col-md-6 text-end">
+                    <button id="refreshBtn" class="btn btn-outline-secondary">Refresh</button>
+                </div>
             </div>
-            <div class="card-body">
-                <form id="collectForm">
-                    <div class="row">
-                        <div class="col-md-6">
-                            <label for="query" class="form-label">Query <i class="fas fa-info-circle" data-bs-toggle="tooltip" title="Enter a domain, IP, or search term"></i></label>
-                            <input type="text" class="form-control" id="query" required>
-                        </div>
-                        <div class="col-md-4">
-                            <label for="tool" class="form-label">Tool</label>
-                            <select class="form-select" id="tool">
-                                <option value="shodan">Shodan (IPs)</option>
-                                <option value="theharvester">theHarvester (Emails/Domains)</option>
-                                <option value="google_dorks">Google Dorks (Domains)</option>
-                            </select>
-                        </div>
-                        <div class="col-md-2 d-flex align-items-end">
-                            <button type="submit" class="btn btn-custom w-100">
-                                <i class="fas fa-play"></i> Collect
-                                <div class="spinner-border spinner-border-sm ms-2" role="status" id="collectSpinner">
-                                    <span class="visually-hidden">Loading...</span>
-                                </div>
-                            </button>
-                        </div>
-                    </div>
-                </form>
-            </div>
-        </div>
 
-        <!-- Search Findings -->
-        <div id="search" class="card mb-4">
-            <div class="card-header bg-success text-white">
-                <h5><i class="fas fa-search"></i> Search Findings</h5>
-            </div>
-            <div class="card-body">
-                <input type="text" class="form-control mb-3" id="searchKeyword" placeholder="Search by keyword (e.g., example)">
+            <div class="table-responsive">
                 <table id="findingsTable" class="table table-striped">
                     <thead>
                         <tr>
+                            <th>ID</th>
                             <th>Type</th>
                             <th>Value</th>
                             <th>Source</th>
+                            <th>Actions</th>
                         </tr>
                     </thead>
-                    <tbody id="results"></tbody>
+                    <tbody id="findingsBody">
+                        <!-- populated by JS -->
+                    </tbody>
                 </table>
-            </div>
-        </div>
-
-        <!-- Geolocation Heatmap -->
-        <div id="heatmap" class="card mb-4">
-            <div class="card-header bg-info text-white">
-                <h5><i class="fas fa-globe"></i> Geolocation Heatmap</h5>
-            </div>
-            <div class="card-body">
-                <button id="loadHeatmap" class="btn btn-custom mb-3">
-                    <i class="fas fa-map-marker-alt"></i> Load Heatmap
-                    <div class="spinner-border spinner-border-sm ms-2" role="status" id="heatmapSpinner">
-                        <span class="visually-hidden">Loading...</span>
-                    </div>
-                </button>
-                <iframe id="heatmapFrame" style="display:none;"></iframe>
-            </div>
-        </div>
-
-        <!-- Export Report -->
-        <div id="export" class="card">
-            <div class="card-header bg-warning text-dark">
-                <h5><i class="fas fa-download"></i> Export Report</h5>
-            </div>
-            <div class="card-body">
-                <p>Download a PDF report of all findings.</p>
-                <a href="/export_pdf" class="btn btn-custom">
-                    <i class="fas fa-file-pdf"></i> Download PDF
-                </a>
             </div>
         </div>
     </div>
 
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="https://cdn.datatables.net/1.11.5/js/jquery.dataTables.min.js"></script>
-    <script src="https://cdn.datatables.net/1.11.5/js/dataTables.bootstrap5.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11.4.8/dist/sweetalert2.all.min.js"></script>
-    <script>
-        $(document).ready(function() {
-            // Initialize tooltips
-            var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
-            var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
-                return new bootstrap.Tooltip(tooltipTriggerEl);
-            });
+    <!-- Heatmap -->
+    <div id="heatmap" class="card mb-4">
+        <div class="card-header bg-info text-white"><strong><i class="fas fa-globe"></i> Geolocation Heatmap</strong></div>
+        <div class="card-body text-center">
+            <button id="loadHeatmap" class="btn btn-custom"><i class="fas fa-map-marker-alt"></i> Load Heatmap</button>
+            <div id="heatmap-container" class="mt-3"></div>
+        </div>
+    </div>
 
-            // Initialize DataTable
-            $('#findingsTable').DataTable({
-                paging: true,
-                searching: false, // We handle search separately
-                info: false
-            });
+    <!-- Export -->
+    <div id="export" class="card mb-5">
+        <div class="card-header bg-warning"><strong><i class="fas fa-download"></i> Export Report</strong></div>
+        <div class="card-body text-center">
+            <a href="/export" class="btn btn-warning"><i class="fas fa-file-pdf"></i> Download PDF</a>
+        </div>
+    </div>
+</div>
 
-            // Dark mode toggle
-            $('#themeToggle').on('click', function() {
-                $('body').toggleClass('dark-mode');
-                $(this).find('i').toggleClass('fa-moon fa-sun');
-            });
+<!-- Delete Confirmation Modal -->
+<div class="modal fade" id="deleteConfirmModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Delete finding</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <p id="deleteModalText">Are you sure you want to delete this entry?</p>
+        <input type="hidden" id="deleteId" />
+      </div>
+      <div class="modal-footer">
+        <button type="button" id="confirmDeleteBtn" class="btn btn-danger">Delete</button>
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+      </div>
+    </div>
+  </div>
+</div>
 
-            // Collect form submission
-            $('#collectForm').on('submit', function(e) {
-                e.preventDefault();
-                $('#collectSpinner').show();
-                $.post('/collect', $(this).serialize(), function(data) {
-                    $('#collectSpinner').hide();
-                    Swal.fire('Success!', 'Data collected successfully.', 'success');
-                    loadFindings(); // Refresh table
-                }).fail(function() {
-                    $('#collectSpinner').hide();
-                    Swal.fire('Error!', 'Failed to collect data.', 'error');
-                });
-            });
+<!-- Toast -->
+<div class="toast-container">
+  <div id="actionToast" class="toast align-items-center text-white bg-success border-0" role="alert" aria-live="assertive" aria-atomic="true">
+    <div class="d-flex">
+      <div class="toast-body" id="toastBody">Action completed</div>
+      <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+    </div>
+  </div>
+</div>
 
-            // Real-time search
-            $('#searchKeyword').on('input', function() {
-                loadFindings();
-            });
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.2/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+$(document).ready(function(){
+    const bsToastEl = document.getElementById('actionToast');
+    const bsToast = new bootstrap.Toast(bsToastEl, { delay: 3000 });
 
-            // Load findings into table
-            function loadFindings() {
-                var keyword = $('#searchKeyword').val();
-                $.get('/search', {keyword: keyword}, function(data) {
-                    var tbody = $('#results');
-                    tbody.empty();
-                    data.forEach(function(item) {
-                        tbody.append('<tr><td>' + item[1] + '</td><td>' + item[2] + '</td><td>' + item[3] + '</td></tr>');
-                    });
-                    $('#findingsTable').DataTable().draw(); // Redraw table
-                });
+    function showToast(message, success=true){
+        $('#toastBody').text(message);
+        if(success) $(bsToastEl).removeClass('bg-danger').addClass('bg-success');
+        else $(bsToastEl).removeClass('bg-success').addClass('bg-danger');
+        bsToast.show();
+    }
+
+    function setSpinner(show){
+        if(show) $('#collectSpinnerWrap').show(); else $('#collectSpinnerWrap').hide();
+    }
+
+    // Load findings and populate table
+    function loadFindings(){
+        $.get('/findings', function(data){
+            const body = $('#findingsBody');
+            body.empty();
+            if(!data || data.length === 0){
+                body.append('<tr><td colspan="5" class="text-center text-muted">No data available</td></tr>');
+                return;
             }
-
-            // Load heatmap
-            $('#loadHeatmap').on('click', function() {
-                $('#heatmapSpinner').show();
-                $('#heatmapFrame').attr('src', '/heatmap').on('load', function() {
-                    $('#heatmapSpinner').hide();
-                    $(this).show();
-                });
+            data.forEach(function(item){
+                const row = `<tr>
+                    <td>${item.id}</td>
+                    <td>${item.type}</td>
+                    <td>${item.value}</td>
+                    <td>${item.source}</td>
+                    <td>
+                        <button class="btn btn-sm btn-outline-danger delete-btn" data-id="${item.id}"><i class="fas fa-trash"></i> Delete</button>
+                    </td>
+                </tr>`;
+                body.append(row);
             });
+        }).fail(function(){ showToast('Failed to load findings', false); });
+    }
 
-            // Load initial findings
-            loadFindings();
+    // Collect form submit
+    $('#collectForm').on('submit', function(e){
+        e.preventDefault();
+        const q = $('#query').val();
+        const tool = $('#tool').val();
+        if(!q || !tool){ showToast('Please provide query and choose a tool', false); return; }
+
+        setSpinner(true);
+        $.ajax({
+            url: '/collect',
+            method: 'POST',
+            contentType: 'application/json',
+            data: JSON.stringify({ query: q, tool: tool }),
+            success: function(resp){
+                setSpinner(false);
+                if(resp && resp.status === 'success'){
+                    showToast(`Collected: inserted ${resp.inserted} / requested ${resp.requested}`, true);
+                    // refresh table
+                    loadFindings();
+                } else {
+                    showToast('Collection returned no data', false);
+                }
+            },
+            error: function(xhr){
+                setSpinner(false);
+                const msg = (xhr && xhr.responseJSON && xhr.responseJSON.error) ? xhr.responseJSON.error : 'Failed to collect data';
+                showToast(msg, false);
+            }
         });
-    </script>
+    });
+
+    // Show delete modal
+    $(document).on('click', '.delete-btn', function(){
+        const id = $(this).data('id');
+        $('#deleteId').val(id);
+        $('#deleteModalText').text(`Are you sure you want to delete entry ID ${id}?`);
+        const modal = new bootstrap.Modal(document.getElementById('deleteConfirmModal'));
+        modal.show();
+    });
+
+    // Confirm delete
+    $('#confirmDeleteBtn').on('click', function(){
+        const id = parseInt($('#deleteId').val());
+        if(!id){ showToast('Invalid id', false); return; }
+
+        $.ajax({
+            url: '/delete',
+            method: 'POST',
+            contentType: 'application/json',
+            data: JSON.stringify({ id: id }),
+            success: function(resp){
+                if(resp && resp.status === 'success'){
+                    showToast('Entry deleted', true);
+                    loadFindings();
+                    const modalEl = document.getElementById('deleteConfirmModal');
+                    bootstrap.Modal.getInstance(modalEl).hide();
+                } else {
+                    showToast('Entry not found', false);
+                }
+            },
+            error: function(xhr){
+                const msg = (xhr && xhr.responseJSON && xhr.responseJSON.error) ? xhr.responseJSON.error : 'Delete failed';
+                showToast(msg, false);
+            }
+        });
+    });
+
+    // Heatmap load
+    $('#loadHeatmap').on('click', function(){
+        $('#heatmap-container').html('<iframe src="/heatmap"></iframe>');
+    });
+
+    // Refresh button + search filter
+    $('#refreshBtn').on('click', loadFindings);
+    $('#searchKeyword').on('input', function(){
+        const q = $(this).val().toLowerCase();
+        $('#findingsBody tr').filter(function(){
+            $(this).toggle($(this).text().toLowerCase().indexOf(q) > -1);
+        });
+    });
+
+    // Toggle theme
+    $('#themeToggle').on('click', function(){
+        $('body').toggleClass('dark-mode');
+        $('.card').toggleClass('dark-mode');
+    });
+
+    // initial load
+    loadFindings();
+    setSpinner(false);
+});
+</script>
 </body>
 </html>
