@@ -120,45 +120,7 @@ def shodan_search(query):
     except shodan.APIError as e:
         return [{'type': 'Error', 'value': str(e), 'source': 'Shodan'}]
 
-def theharvester_search(domain):
-    try:
-        # We will capture stdout, so no need for file output
-        # Use python -m to run the module, which is more reliable than expecting the CLI in PATH
-        command = [sys.executable, '-m', 'theHarvester', '-d', domain, '-b', 'duckduckgo,bing,yahoo,certspotter']
-        
-        result = subprocess.run(
-            command, 
-            capture_output=True, 
-            text=True, 
-            timeout=120,
-            cwd=os.path.expanduser('~') # Run from user's home directory
-        )
 
-        # A non-zero return code indicates an error
-        if result.returncode != 0:
-            error_message = result.stderr or result.stdout
-            return [{'type': 'Error', 'value': f"theHarvester exited with an error: {error_message}", 'source': 'theHarvester'}]
-
-        # Use the raw stdout as the details
-        details = result.stdout
-        
-        # Create a simple summary value
-        summary_value = f"theHarvester scan completed for {domain}"
-        
-        findings = [{
-            'type': 'theHarvester Scan', 
-            'value': summary_value, 
-            'source': 'theHarvester',
-            'details': details # Store the raw stdout
-        }]
-
-        return findings
-    except FileNotFoundError:
-        return [{'type': 'Error', 'value': 'theHarvester not found. Make sure it is installed and in your PATH.', 'source': 'System'}]
-    except subprocess.TimeoutExpired:
-        return [{'type': 'Error', 'value': 'theHarvester scan timed out after 2 minutes.', 'source': 'theHarvester'}]
-    except Exception as e:
-        return [{'type': 'Error', 'value': f"An unexpected error occurred: {e}", 'source': 'theHarvester'}]
 
 
 def google_dorks_search(query):
@@ -347,8 +309,7 @@ def collect():
     findings = []
     if tool == 'shodan':
         findings = shodan_search(query)
-    elif tool == 'theharvester':
-        findings = theharvester_search(query)
+
     elif tool == 'google_dorks':
         findings = google_dorks_search(query)
     elif tool == 'whois':

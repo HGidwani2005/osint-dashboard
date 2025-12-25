@@ -3,7 +3,7 @@
 A professional web-based dashboard for collecting, visualizing, and exporting OSINT (Open-Source Intelligence) data. Features an interactive UI with dark mode, real-time search, and modern design.
 
 ## Features
-- Collect OSINT data using simulated tools (Shodan, theHarvester, Google Dorks).
+- Collect OSINT data using simulated tools (Shodan, Google Dorks).
 - Interactive search with real-time filtering and sortable table.
 - Geolocation heatmap for IPs.
 - Export findings to PDF.

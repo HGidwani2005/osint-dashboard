@@ -10,4 +10,4 @@ python-whois
 sherlock-project
 requests
 theHarvester
-git+https://github.com/laramies/theHarvester.git
+
