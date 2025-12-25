@@ -1,5 +1,6 @@
 from flask import Flask, render_template, request, jsonify, send_file
 import sqlite3
+import sys
 import folium
 from folium.plugins import HeatMap, MarkerCluster
 from xhtml2pdf import pisa
@@ -122,7 +123,8 @@ def shodan_search(query):
 def theharvester_search(domain):
     try:
         # We will capture stdout, so no need for file output
-        command = ['theHarvester', '-d', domain, '-b', 'duckduckgo,bing,yahoo,certspotter']
+        # Use python -m to run the module, which is more reliable than expecting the CLI in PATH
+        command = [sys.executable, '-m', 'theHarvester', '-d', domain, '-b', 'duckduckgo,bing,yahoo,certspotter']
         
         result = subprocess.run(
             command, 
@@ -223,7 +225,7 @@ def sherlock_search(username):
     try:
         # Add --no-color to prevent ANSI escape codes in the output
         # Add a timeout and run from the user's home directory for consistency
-        command = ['sherlock', '--no-color', username]
+        command = [sys.executable, '-m', 'sherlock', '--no-color', username]
         result = subprocess.run(
             command, 
             capture_output=True, 
