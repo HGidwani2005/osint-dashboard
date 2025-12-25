@@ -1,6 +1,7 @@
 from flask import Flask, render_template, request, jsonify, send_file
 import sqlite3
 import sys
+import google.generativeai as genai
 import folium
 from folium.plugins import HeatMap, MarkerCluster
 from xhtml2pdf import pisa
@@ -506,26 +507,59 @@ def export_pdf():
         if os.path.exists(map_html_filename):
             os.remove(map_html_filename)
 
+@app.route('/analyze', methods=['GET'])
+def analyze():
+    config = load_config()
+    api_key = config.get('gemini_api_key')
+    
+    if not api_key:
+        return jsonify({'error': 'Gemini API key not configured. Please add it in Settings.'}), 400
+
+    # Fetch recent findings to summarize
+    conn = sqlite3.connect('osint.db')
+    conn.row_factory = sqlite3.Row
+    c = conn.cursor()
+    # Limit to last 50 findings to avoid overflowing context window
+    c.execute("SELECT type, value, source, country, ports FROM findings ORDER BY timestamp DESC LIMIT 50")
+    findings = [dict(row) for row in c.fetchall()]
+    conn.close()
+
+    if not findings:
+        return jsonify({'error': 'No findings available to analyze.'}), 400
+
+    findings_text = json.dumps(findings, indent=2)
+    
+    prompt = f"""
+    You are an expert Cyber Threat Intelligence Analyst. 
+    Analyze the following OSINT findings and provide a comprehensive summary.
+    
+    Focus on:
+    1. Key Threats: Identify any high-risk findings (e.g., open sensitive ports, malicious IPs).
+    2. Geographic Distribution: Where are the targets located?
+    3. Recommendations: What specific actions should be taken?
+
+    Format your response in Markdown.
+    
+    Findings:
+    {findings_text}
+    """
+
+    if api_key == 'dummy':
+        return jsonify({'analysis': '# AI Analysis (Mock)\n\n**Threat Level:** Low\n\nThis is a simulated analysis using a dummy API key.\n- No high-risk findings detected.\n- **Recommendation**: Configure a real Gemini API key for actual analysis.'})
+
+    try:
+        genai.configure(api_key=api_key)
+        model = genai.GenerativeModel('gemini-pro')
+        response = model.generate_content(prompt)
+        return jsonify({'analysis': response.text})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
 @app.route('/settings')
 def settings():
     return render_template('settings.html')
 
-@app.route('/get_settings', methods=['GET'])
-def get_settings():
-    return jsonify(load_config())
 
-@app.route('/save_settings', methods=['POST'])
-def save_settings():
-    config = load_config()
-    config['shodan_api_key'] = request.form.get('shodan_api_key', '')
-    config['google_api_key'] = request.form.get('google_api_key', '')
-    config['google_cse_id'] = request.form.get('google_cse_id', '')
-    config['virustotal_api_key'] = request.form.get('virustotal_api_key', '')
-    config['censys_api_id'] = request.form.get('censys_api_id', '')
-    # Remove censys_api_secret if it exists from old configs
-    config.pop('censys_api_secret', None)
-    save_config(config)
-    return jsonify({'message': 'Settings saved successfully!'})
 
 @app.route('/clean_db', methods=['POST'])
 def clean_db():

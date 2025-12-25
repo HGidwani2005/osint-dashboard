@@ -11,3 +11,5 @@ sherlock-project
 requests
 theHarvester
 
+
+google-generativeai
