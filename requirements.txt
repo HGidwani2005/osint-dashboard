@@ -4,12 +4,7 @@ xhtml2pdf
 shodan
 google-api-python-client
 selenium
-ipwhois
-pycountry_convert
 python-whois
 sherlock-project
 requests
-theHarvester
-
-
 google-generativeai

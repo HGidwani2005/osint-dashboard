@@ -1,7 +1,7 @@
 from flask import Flask, render_template, request, jsonify, send_file
 import sqlite3
 import sys
-import google.generativeai as genai
+import google.genai as genai
 import folium
 from folium.plugins import HeatMap, MarkerCluster
 from xhtml2pdf import pisa
@@ -11,8 +11,6 @@ import time
 import datetime
 from selenium import webdriver
 from selenium.webdriver.chrome.service import Service as ChromeService
-from ipwhois import IPWhois
-import pycountry_convert as pc
 import whois
 import shodan
 from googleapiclient.discovery import build
