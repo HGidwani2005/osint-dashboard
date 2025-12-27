@@ -11,31 +11,19 @@ import time
 import datetime
 from selenium import webdriver
 from selenium.webdriver.chrome.service import Service as ChromeService
-import whois
-import shodan
-from googleapiclient.discovery import build
-from googleapiclient.errors import HttpError
-import subprocess
-import re
-import requests
-from base64 import urlsafe_b64encode
+from utils import load_config, save_config
+from tools.shodan_tool import shodan_search
+from tools.google_dorks_tool import google_dorks_search
+from tools.whois_tool import whois_search
+from tools.sherlock_tool import sherlock_search
+from tools.virustotal_tool import virustotal_search
+from tools.censys_tool import censys_search
 
 
 
 app = Flask(__name__)
 
-CONFIG_FILE = 'config.json'
 
-# Config functions
-def load_config():
-    if os.path.exists(CONFIG_FILE):
-        with open(CONFIG_FILE, 'r') as f:
-            return json.load(f)
-    return {}
-
-def save_config(config):
-    with open(CONFIG_FILE, 'w') as f:
-        json.dump(config, f, indent=4)
 
 
 # Database setup
@@ -85,217 +73,20 @@ def init_db():
 init_db()
 
 # Real OSINT Functions
-def shodan_search(query):
-    config = load_config()
-    api_key = config.get('shodan_api_key')
-    if not api_key:
-        return [{'type': 'Error', 'value': 'Shodan API key not configured', 'source': 'System'}]
-    
-    try:
-        api = shodan.Shodan(api_key)
-        host = api.host(query)
-        
-        # Data Enrichment for table view
-        asn_info = host.get('asn', 'N/A')
-        country_name = host.get('country_name', 'N/A')
-        ports = ', '.join(str(p) for p in host.get('ports', []))
-        
-        # Create a more descriptive value for the main table
-        hostnames = ', '.join(host.get('hostnames', []))
-        value_summary = f"{host.get('ip_str')} | Hostnames: {hostnames}"
-
-        findings = [{
-            'type': 'IP',
-            'value': value_summary,
-            'source': 'Shodan',
-            'lat': host.get('latitude'),
-            'lon': host.get('longitude'),
-            'asn': asn_info,
-            'country': country_name,
-            'ports': ports,
-            'details': host # Add the full host object for the details view
-        }]
-        return findings
-    except shodan.APIError as e:
-        return [{'type': 'Error', 'value': str(e), 'source': 'Shodan'}]
 
 
 
 
-def google_dorks_search(query):
-    config = load_config()
-    api_key = config.get('google_api_key')
-    cse_id = config.get('google_cse_id')
 
-    if not api_key or not cse_id:
-        return [{'type': 'Error', 'value': 'Google API key or CSE ID not configured', 'source': 'System'}]
 
-    try:
-        service = build("customsearch", "v1", developerKey=api_key)
-        res = service.cse().list(q=query, cx=cse_id, num=10).execute()
-        
-        items = res.get('items', [])
-        item_count = len(items)
-        
-        summary_value = f"Found {item_count} results for dork query"
-        
-        findings = [{
-            'type': 'Google Dork',
-            'value': summary_value,
-            'source': 'Google Dorks',
-            'details': res # The full API response
-        }]
-        return findings
-    except HttpError as e:
-        return [{'type': 'Error', 'value': f"Google API Error: {e.reason}", 'source': 'Google Dorks'}]
-    except Exception as e:
-        return [{'type': 'Error', 'value': str(e), 'source': 'Google Dorks'}]
 
-def whois_search(domain):
-    try:
-        w = whois.whois(domain)
-        if not w.get('domain_name'):
-            return [{'type': 'Error', 'value': 'WHOIS data not found for domain.', 'source': 'WHOIS'}]
 
-        # Format the result for display in the main table
-        info = f"Registrar: {w.registrar}, Created: {w.creation_date}, Expires: {w.expiration_date}"
-        
-        # The whois object is a dict-like object, but its values can include non-serializable datetime objects.
-        # We create a serializable copy.
-        details_copy = {}
-        for key, value in w.items():
-            if isinstance(value, datetime.datetime):
-                details_copy[key] = value.isoformat()
-            elif isinstance(value, list):
-                # Handle lists that might contain datetimes
-                details_copy[key] = [v.isoformat() if isinstance(v, datetime.datetime) else v for v in value]
-            else:
-                details_copy[key] = value
 
-        findings = [{
-            'type': 'WHOIS', 
-            'value': info, 
-            'source': 'WHOIS',
-            'details': details_copy
-        }]
-        return findings
-    except Exception as e:
-        return [{'type': 'Error', 'value': str(e), 'source': 'WHOIS'}]
 
-def sherlock_search(username):
-    try:
-        # Add --no-color to prevent ANSI escape codes in the output
-        # Add a timeout and run from the user's home directory for consistency
-        command = [sys.executable, '-m', 'sherlock', '--no-color', username]
-        result = subprocess.run(
-            command, 
-            capture_output=True, 
-            text=True, 
-            timeout=120,
-            cwd=os.path.expanduser('~')
-        )
 
-        if result.returncode != 0:
-            error_message = result.stderr or result.stdout
-            return [{'type': 'Error', 'value': f"Sherlock exited with an error: {error_message}", 'source': 'Sherlock'}]
 
-        # Count the number of found profiles for the summary
-        found_lines = [line for line in result.stdout.splitlines() if line.startswith('[+]')]
-        profile_count = len(found_lines)
 
-        summary_value = f"Found {profile_count} profiles for username '{username}'"
-        
-        findings = [{
-            'type': 'Sherlock Scan', 
-            'value': summary_value, 
-            'source': 'Sherlock',
-            'details': result.stdout # Store the raw, formatted stdout
-        }]
 
-        return findings
-    except FileNotFoundError:
-        return [{'type': 'Error', 'value': 'Sherlock not found. Make sure it is installed and in your PATH.', 'source': 'System'}]
-    except subprocess.TimeoutExpired:
-        return [{'type': 'Error', 'value': 'Sherlock scan timed out after 2 minutes.', 'source': 'Sherlock'}]
-    except Exception as e:
-        return [{'type': 'Error', 'value': f"An unexpected error occurred: {e}", 'source': 'Sherlock'}]
-
-def virustotal_search(query):
-    config = load_config()
-    api_key = config.get('virustotal_api_key')
-    if not api_key:
-        return [{'type': 'Error', 'value': 'VirusTotal API key not configured', 'source': 'System'}]
-
-    headers = {
-        "x-apikey": api_key
-    }
-    
-    try:
-        # Check if query is an IP address
-        if re.match(r"^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$", query):
-            url = f"https://www.virustotal.com/api/v3/ip_addresses/{query}"
-            response = requests.get(url, headers=headers)
-            response.raise_for_status() # Raise an exception for bad status codes
-            resp = response.json()
-            
-            stats = resp.get('data', {}).get('attributes', {}).get('last_analysis_stats', {})
-            info = f"Malicious: {stats.get('malicious', 0)}, Harmless: {stats.get('harmless', 0)}, Suspicious: {stats.get('suspicious', 0)}"
-            return [{'type': 'IP Reputation', 'value': info, 'source': 'VirusTotal', 'details': resp}]
-        else: # Assume it's a domain/URL
-            url_id = urlsafe_b64encode(query.encode()).decode().strip("=")
-            url = f"https://www.virustotal.com/api/v3/urls/{url_id}"
-            response = requests.get(url, headers=headers)
-            response.raise_for_status()
-            resp = response.json()
-
-            stats = resp.get('data', {}).get('attributes', {}).get('last_analysis_stats', {})
-            info = f"Malicious: {stats.get('malicious', 0)}, Harmless: {stats.get('harmless', 0)}, Suspicious: {stats.get('suspicious', 0)}"
-            return [{'type': 'Domain Reputation', 'value': info, 'source': 'VirusTotal', 'details': resp}]
-    except requests.exceptions.HTTPError as e:
-        # Handle HTTP errors (like 404 Not Found) gracefully
-        return [{'type': 'Error', 'value': f"VirusTotal API Error: {e.response.status_code} {e.response.reason}", 'source': 'VirusTotal'}]
-    except Exception as e:
-        return [{'type': 'Error', 'value': str(e), 'source': 'VirusTotal'}]
-
-def censys_search(query):
-    config = load_config()
-    token = config.get('censys_api_id') 
-    if not token:
-        return [{'type': 'Error', 'value': 'Censys Personal Access Token not configured', 'source': 'System'}]
-
-    # Headers for the new Censys Platform API v3
-    headers = {
-        "Authorization": f"Bearer {token}",
-        "Accept": "application/vnd.censys.api.v3.host.v1+json"
-    }
-    
-    # The new Censys Platform API v3 endpoint for hosts
-    url = f"https://api.platform.censys.io/v3/global/asset/host/{query}"
-    
-    try:
-        response = requests.get(url, headers=headers)
-        response.raise_for_status()
-        resp = response.json()
-
-        # Correctly parse the new v3 response structure
-        services = []
-        resource = resp.get('result', {}).get('resource', {})
-        for service in resource.get('services', []):
-            # Use 'transport_protocol' as confirmed by the JSON response
-            services.append(f"{service.get('port')}/{service.get('transport_protocol')}")
-        
-        info = f"Services: {', '.join(services)}"
-        
-        return [{'type': 'Censys Host', 'value': info, 'source': 'Censys', 'details': resp.get('result', {})}]
-    except requests.exceptions.HTTPError as e:
-        # The new API might return a more detailed error message in the response body
-        try:
-            error_details = e.response.json().get('error', str(e))
-        except json.JSONDecodeError:
-            error_details = str(e)
-        return [{'type': 'Error', 'value': f"Censys API Error: {e.response.status_code} - {error_details}", 'source': 'Censys'}]
-    except Exception as e:
-        return [{'type': 'Error', 'value': str(e), 'source': 'Censys'}]
 
 @app.route('/')
 def index():
