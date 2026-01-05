@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -16,59 +17,72 @@
             --card-bg: #ffffff;
             --sidebar-bg: #ffffff;
             --border-color: #dee2e6;
-            --accent-gold: #B8860B;
-            --accent-maroon: #800000;
-            --button-text: #ffffff;
+            --accent-gold: #63a7eb;
+            --accent-maroon: #130e95;
+            --button-text: #972e2e;
             --monospace-font: 'Courier New', Courier, monospace;
             --sidebar-width: 250px;
             --sidebar-collapsed-width: 60px;
         }
+
         .dark-mode {
-            --bg-color: #16181a;
-            --text-color: #e0e0e0;
-            --card-bg: #212529;
-            --sidebar-bg: #212529;
-            --border-color: #444;
+            --bg-color: #0b0e11;
+            --text-color: #e6e6e6;
+            --card-bg: #151a21;
+            --sidebar-bg: #151a21;
+            --border-color: #2d333b;
+            --accent-blue: #4dabf7;
+            --accent-orange: #ff6b6b;
+            --button-text: #ffffff;
         }
 
         /* --- General & Layout --- */
-        body { 
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             background-color: var(--bg-color);
             color: var(--text-color);
             transition: background-color 0.3s, color 0.3s;
         }
-        .main-content { 
-            margin-left: var(--sidebar-width); 
+
+        .main-content {
+            margin-left: var(--sidebar-width);
             padding: 20px;
             transition: margin-left 0.3s ease;
         }
-        h1, h2, h3, h4, h5 {
+
+        h1,
+        h2,
+        h3,
+        h4,
+        h5 {
             color: var(--accent-maroon);
             letter-spacing: 0.5px;
         }
+
         .table-responsive {
             overflow-x: auto;
         }
 
         /* --- Sidebar --- */
-        .sidebar { 
-            height: 100vh; 
-            background: var(--sidebar-bg); 
-            position: fixed; 
+        .sidebar {
+            height: 100vh;
+            background: var(--sidebar-bg);
+            position: fixed;
             width: var(--sidebar-width);
             border-right: 1px solid var(--border-color);
             transition: all 0.3s ease;
             display: flex;
             flex-direction: column;
         }
+
         .sidebar-header {
             border-bottom: 1px solid var(--border-color);
         }
-        .sidebar a { 
-            color: var(--text-color); 
-            text-decoration: none; 
-            padding: 15px 20px; 
+
+        .sidebar a {
+            color: var(--text-color);
+            text-decoration: none;
+            padding: 15px 20px;
             display: flex;
             align-items: center;
             transition: background-color 0.2s ease, color 0.2s ease;
@@ -76,15 +90,19 @@
             white-space: nowrap;
             overflow: hidden;
         }
+
         .sidebar a i {
             margin-right: 15px;
-            width: 20px; /* Fixed width for icons */
+            width: 20px;
+            /* Fixed width for icons */
             text-align: center;
         }
+
         .sidebar a:hover {
-            background: var(--accent-gold);
+            background: var(--sidebar-bg);
             color: var(--button-text);
         }
+
         .sidebar-footer {
             margin-top: auto;
             padding: 15px;
@@ -95,93 +113,120 @@
         .sidebar.collapsed {
             width: var(--sidebar-collapsed-width);
         }
+
         .sidebar.collapsed .sidebar-header h4 {
             padding: 1rem;
             font-size: 1.5rem;
             text-align: center;
         }
-        .sidebar.collapsed .sidebar-header h4 span, .sidebar.collapsed a span {
+
+        .sidebar.collapsed .sidebar-header h4 span,
+        .sidebar.collapsed a span {
             display: none;
         }
+
         .sidebar.collapsed a {
             justify-content: center;
             padding: 15px 0;
         }
-        .sidebar.collapsed a i, .sidebar.collapsed .sidebar-header i {
+
+        .sidebar.collapsed a i,
+        .sidebar.collapsed .sidebar-header i {
             margin-right: 0;
         }
+
         .sidebar.collapsed .sidebar-footer {
             padding: 15px 10px;
         }
+
         .sidebar.collapsed #sidebar-toggle i {
             transform: rotate(180deg);
         }
+
         .main-content.collapsed {
             margin-left: var(--sidebar-collapsed-width);
         }
 
         /* --- UI Elements --- */
-        .card { 
-            border: 1px solid var(--border-color); 
+        .card {
+            border: 1px solid var(--border-color);
             background-color: var(--card-bg);
             box-shadow: none;
             border-radius: 4px;
         }
+
         .card-header {
             background-color: transparent;
             border-bottom: 1px solid var(--border-color);
         }
+
         .collection-bar .card-body {
             padding: 1rem;
         }
-        .btn-custom { 
-            background: var(--accent-maroon); 
+
+        .btn-custom {
+            background: var(--accent-maroon);
             border: 1px solid var(--accent-maroon);
             color: var(--button-text);
             font-weight: bold;
             border-radius: 2px;
         }
-        .btn-custom:hover { 
+
+        .btn-custom:hover {
             background: var(--accent-gold);
             border-color: var(--accent-gold);
             color: var(--button-text);
         }
-        .form-control, .form-select {
+
+        .form-control,
+        .form-select {
             background-color: var(--bg-color);
             color: var(--text-color);
             border: 1px solid #6c757d;
         }
-        .form-control:focus, .form-select:focus {
+
+        .form-control:focus,
+        .form-select:focus {
             border-color: var(--accent-gold);
             box-shadow: 0 0 5px var(--accent-gold);
         }
-        .table-hover > tbody > tr {
+
+        .table-hover>tbody>tr {
             cursor: pointer;
             transition: background-color 0.2s ease;
         }
-        .table-hover > tbody > tr:hover > * {
-            background-color: rgba(184, 134, 11, 0.1); /* Gold tint on hover */
+
+        .table-hover>tbody>tr:hover>* {
+            background-color: rgba(77, 171, 247, 0.15);
+            /* Blue tint on hover */
         }
+
         .nav-tabs .nav-link {
             color: var(--text-color);
             border: none;
             border-bottom: 2px solid transparent;
         }
+
         .nav-tabs .nav-link.active {
             color: var(--accent-maroon);
             background-color: transparent;
             border-bottom: 2px solid var(--accent-maroon);
         }
-        
+
         /* --- Custom Modal --- */
         #custom-modal-backdrop {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background-color: rgba(0,0,0,0.7);
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.7);
             z-index: 1060;
             display: none;
             justify-content: center;
             align-items: center;
         }
+
         #custom-modal-content {
             background-color: var(--card-bg);
             color: var(--text-color);
@@ -194,14 +239,25 @@
             position: relative;
             display: flex;
             flex-direction: column;
-            box-shadow: 0 0 25px rgba(212, 175, 55, 0.2);
+            box-shadow: 0 0 25px rgba(77, 171, 247, 0.2);
         }
+
         #custom-modal-close {
-            position: absolute; top: 10px; right: 20px;
-            font-size: 2.5rem; font-weight: bold; color: #6c757d;
-            border: none; background: none; cursor: pointer;
+            position: absolute;
+            top: 10px;
+            right: 20px;
+            font-size: 2.5rem;
+            font-weight: bold;
+            color: #6c757d;
+            border: none;
+            background: none;
+            cursor: pointer;
         }
-        #custom-modal-close:hover { color: var(--accent-gold); }
+
+        #custom-modal-close:hover {
+            color: var(--accent-gold);
+        }
+
         #detailsJson {
             flex-grow: 1;
             overflow-y: auto;
@@ -221,24 +277,30 @@
         .dark-mode .table {
             color: var(--text-color);
         }
-        .dark-mode .table-striped > tbody > tr:nth-of-type(odd) > * {
-            --bs-table-accent-bg: rgba(212, 175, 55, 0.05); /* Subtle Gold tint */
+
+        .dark-mode .table-striped>tbody>tr:nth-of-type(odd)>* {
+            --bs-table-accent-bg: rgba(77, 171, 247, 0.05);
+            /* Subtle Blue tint */
         }
+
         .dark-mode .dataTables_paginate .page-link {
             background-color: var(--card-bg);
             color: var(--text-color);
             border-color: var(--border-color);
         }
+
         .dark-mode .dataTables_paginate .page-link:hover {
             background-color: #333;
             color: var(--accent-gold);
             border-color: var(--border-color);
         }
+
         .dark-mode .page-item.active .page-link {
             background-color: var(--accent-gold);
             color: var(--button-text);
             border-color: var(--accent-gold);
         }
+
         .dark-mode .page-item.disabled .page-link {
             background-color: transparent;
             color: #6c757d;
@@ -246,6 +308,7 @@
         }
     </style>
 </head>
+
 <body>
     <div class="sidebar" id="sidebar">
         <div class="sidebar-header">
@@ -254,8 +317,10 @@
         <a href="/"><i class="fas fa-chart-line"></i> <span>Dashboard</span></a>
         <a href="/settings"><i class="fas fa-cog"></i> <span>Settings</span></a>
         <div class="sidebar-footer">
-            <button id="themeToggle" class="btn btn-outline-secondary w-100 mb-2" title="Toggle Theme"><i class="fas fa-moon"></i></button>
-            <button id="sidebar-toggle" class="btn btn-outline-secondary w-100" title="Toggle Sidebar"><i class="fas fa-angle-double-left"></i></button>
+            <button id="themeToggle" class="btn btn-outline-secondary w-100 mb-2" title="Toggle Theme"><i
+                    class="fas fa-moon"></i></button>
+            <button id="sidebar-toggle" class="btn btn-outline-secondary w-100" title="Toggle Sidebar"><i
+                    class="fas fa-angle-double-left"></i></button>
         </div>
     </div>
 
@@ -289,7 +354,9 @@
                     </div>
                 </form>
                 <div class="progress mt-2" style="display: none; height: 5px;">
-                  <div id="collect-progress-bar" class="progress-bar progress-bar-striped progress-bar-animated bg-success" role="progressbar" style="width: 0%;"></div>
+                    <div id="collect-progress-bar"
+                        class="progress-bar progress-bar-striped progress-bar-animated bg-success" role="progressbar"
+                        style="width: 0%;"></div>
                 </div>
             </div>
         </div>
@@ -299,13 +366,22 @@
             <div class="card-header">
                 <ul class="nav nav-tabs card-header-tabs" id="main-tabs" role="tablist">
                     <li class="nav-item" role="presentation">
-                        <button class="nav-link active" id="findings-tab" data-bs-toggle="tab" data-bs-target="#findings" type="button" role="tab" aria-controls="findings" aria-selected="true">Findings</button>
+                        <button class="nav-link active" id="findings-tab" data-bs-toggle="tab"
+                            data-bs-target="#findings" type="button" role="tab" aria-controls="findings"
+                            aria-selected="true">Findings</button>
                     </li>
                     <li class="nav-item" role="presentation">
-                        <button class="nav-link" id="heatmap-tab" data-bs-toggle="tab" data-bs-target="#heatmap" type="button" role="tab" aria-controls="heatmap" aria-selected="false">Heatmap</button>
+                        <button class="nav-link" id="heatmap-tab" data-bs-toggle="tab" data-bs-target="#heatmap"
+                            type="button" role="tab" aria-controls="heatmap" aria-selected="false">Heatmap</button>
                     </li>
                     <li class="nav-item" role="presentation">
-                        <button class="nav-link" id="report-tab" data-bs-toggle="tab" data-bs-target="#report" type="button" role="tab" aria-controls="report" aria-selected="false">Report</button>
+                        <button class="nav-link" id="report-tab" data-bs-toggle="tab" data-bs-target="#report"
+                            type="button" role="tab" aria-controls="report" aria-selected="false">Report</button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="ai-tab" data-bs-toggle="tab" data-bs-target="#ai-insights"
+                            type="button" role="tab" aria-controls="ai-insights" aria-selected="false"><i
+                                class="fas fa-robot"></i> AI Insights</button>
                     </li>
                 </ul>
             </div>
@@ -314,7 +390,8 @@
                     <div class="tab-pane fade show active" id="findings" role="tabpanel" aria-labelledby="findings-tab">
                         <div class="row mb-3 g-2">
                             <div class="col-md-4">
-                                <input type="text" class="form-control" id="searchKeyword" placeholder="Search keyword...">
+                                <input type="text" class="form-control" id="searchKeyword"
+                                    placeholder="Search keyword...">
                             </div>
                             <div class="col-md-2">
                                 <input type="text" class="form-control" id="portFilter" placeholder="Filter port...">
@@ -327,7 +404,8 @@
                             </div>
                         </div>
                         <div class="d-flex justify-content-end mb-3">
-                            <button id="deleteSelected" class="btn btn-danger" disabled title="Delete Selected"><i class="fas fa-trash"></i></button>
+                            <button id="deleteSelected" class="btn btn-danger" disabled title="Delete Selected"><i
+                                    class="fas fa-trash"></i></button>
                         </div>
                         <div class="table-responsive">
                             <table id="findingsTable" class="table table-hover">
@@ -345,7 +423,8 @@
                         </div>
                     </div>
                     <div class="tab-pane fade" id="heatmap" role="tabpanel" aria-labelledby="heatmap-tab">
-                        <p class="text-muted small">Date and port filters from the 'Findings' tab will apply to the heatmap.</p>
+                        <p class="text-muted small">Date and port filters from the 'Findings' tab will apply to the
+                            heatmap.</p>
                         <button id="loadHeatmap" class="btn btn-custom mb-3">
                             <i class="fas fa-map-marker-alt"></i> Generate Heatmap
                         </button>
@@ -356,8 +435,32 @@
                         <button id="exportPdfButton" class="btn btn-custom">
                             <i class="fas fa-file-pdf"></i> Download PDF Report
                         </button>
-                        <div id="exportSpinner" class="spinner-border spinner-border-sm ms-2" role="status" style="display: none;"></div>
-                        <p id="exportMessage" class="text-muted mt-2" style="display: none;">Generating report, this may take a moment...</p>
+                        <div id="exportSpinner" class="spinner-border spinner-border-sm ms-2" role="status"
+                            style="display: none;"></div>
+                        <p id="exportMessage" class="text-muted mt-2" style="display: none;">Generating report, this may
+                            take a moment...</p>
+                    </div>
+                    <div class="tab-pane fade" id="ai-insights" role="tabpanel" aria-labelledby="ai-tab">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <p class="mb-0">Generate a security analysis of your current findings using Google Gemini.
+                            </p>
+                            <button id="generateAiAnalysis" class="btn btn-custom">
+                                <i class="fas fa-magic"></i> Analyze Findings
+                            </button>
+                        </div>
+                        <div id="aiSpinner" class="text-center my-5" style="display: none;">
+                            <div class="spinner-border text-primary" role="status">
+                                <span class="visually-hidden">Loading...</span>
+                            </div>
+                            <p class="mt-2">Analyzing data...</p>
+                        </div>
+                        <div id="aiContent" class="card" style="display: none;">
+                            <div class="card-body bg-white rounded shadow-sm text-dark p-4" style="line-height: 1.6;">
+                                <!-- Markdown content will be rendered here -->
+                                <pre id="aiRawOutput"
+                                    style="white-space: pre-wrap; font-family: inherit; margin: 0;"></pre>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -366,11 +469,11 @@
 
     <!-- Custom Details Modal -->
     <div id="custom-modal-backdrop">
-      <div id="custom-modal-content">
-        <h5 class="modal-title">Finding Details</h5>
-        <button id="custom-modal-close">&times;</button>
-        <pre id="detailsJson"></pre>
-      </div>
+        <div id="custom-modal-content">
+            <h5 class="modal-title">Finding Details</h5>
+            <button id="custom-modal-close">&times;</button>
+            <pre id="detailsJson"></pre>
+        </div>
     </div>
 
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
@@ -379,17 +482,17 @@
     <script src="https://cdn.datatables.net/1.11.5/js/dataTables.bootstrap5.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11.4.8/dist/sweetalert2.all.min.js"></script>
     <script>
-        $(document).ready(function() {
+        $(document).ready(function () {
             // --- Initialization ---
             var findingsTable = $('#findingsTable').DataTable({
                 "paging": true,
                 "searching": false,
                 "info": false,
-                "order": [[ 1, "desc" ]],
-                "columnDefs": [ 
+                "order": [[1, "desc"]],
+                "columnDefs": [
                     { "orderable": false, "targets": 0 }
                 ],
-                "createdRow": function( row, data, dataIndex ) {
+                "createdRow": function (row, data, dataIndex) {
                     // The full data object for the row is stored in the 'data' parameter.
                     // We need to find the original full object from the initial AJAX call.
                     // This requires a bit of a workaround since DataTables works with array data.
@@ -410,12 +513,12 @@
                     port: port,
                     start_date: startDate,
                     end_date: endDate
-                }, function(data) {
+                }, function (data) {
                     var table = $('#findingsTable').DataTable();
                     table.clear();
-                    data.forEach(function(item) {
+                    data.forEach(function (item) {
                         var details = item[10]; // Details are in the 11th column
-                        
+
                         var rowNode = table.row.add([
                             `<input type="checkbox" class="finding-checkbox" value="${item[0]}">`,
                             item[6], // timestamp
@@ -423,7 +526,7 @@
                             item[2], // value
                             item[3]  // source
                         ]).draw(false).node();
-                        
+
                         // Attach details data to the row for the click handler
                         if (details) {
                             $(rowNode).data('details', details);
@@ -435,12 +538,12 @@
             }
 
             function initializeDateFilters() {
-                $.get('/get_date_range', function(data) {
+                $.get('/get_date_range', function (data) {
                     if (data.min_date && data.max_date) {
                         $('#startDate').val(data.min_date);
                         $('#endDate').val(data.max_date);
                     }
-                }).always(function() {
+                }).always(function () {
                     loadFindings();
                 });
             }
@@ -448,7 +551,7 @@
             // --- Event Handlers ---
 
             // Sidebar Toggle
-            $('#sidebar-toggle').on('click', function() {
+            $('#sidebar-toggle').on('click', function () {
                 $('#sidebar').toggleClass('collapsed');
                 $('#main-content').toggleClass('collapsed');
             });
@@ -463,7 +566,7 @@
                     $('#themeToggle i').removeClass('fa-sun').addClass('fa-moon');
                 }
             }
-            $('#themeToggle').on('click', function() {
+            $('#themeToggle').on('click', function () {
                 var isDark = $('body').hasClass('dark-mode');
                 var newTheme = isDark ? 'light' : 'dark';
                 applyTheme(newTheme);
@@ -472,7 +575,7 @@
 
             // Collection Form
             var progressInterval;
-            $('#collectForm').on('submit', function(e) {
+            $('#collectForm').on('submit', function (e) {
                 e.preventDefault();
                 var $submitButton = $(this).find('button[type="submit"]');
                 $submitButton.prop('disabled', true);
@@ -506,7 +609,7 @@
             });
 
             // Findings Table Row Click for Details
-            $('#findingsTable tbody').on('click', 'tr', function(event) {
+            $('#findingsTable tbody').on('click', 'tr', function (event) {
                 if ($(event.target).is('input:checkbox')) {
                     return;
                 }
@@ -522,21 +625,21 @@
                     $('#custom-modal-backdrop').css('display', 'flex');
                 }
             });
-            
+
             // Other Table Interactions (Checkboxes, Delete)
-            $('#selectAll').on('click', function() {
+            $('#selectAll').on('click', function () {
                 var rows = findingsTable.rows({ 'search': 'applied' }).nodes();
                 $('input[type="checkbox"]', rows).prop('checked', this.checked);
                 updateDeleteButtonState();
             });
-            $('#findingsTable tbody').on('change', 'input[type="checkbox"]', function() {
+            $('#findingsTable tbody').on('change', 'input[type="checkbox"]', function () {
                 updateDeleteButtonState();
             });
             function updateDeleteButtonState() {
                 $('#deleteSelected').prop('disabled', !$('.finding-checkbox:checked').length > 0);
             }
-            $('#deleteSelected').on('click', function() {
-                var selectedIds = $('.finding-checkbox:checked').map(function() { return $(this).val(); }).get();
+            $('#deleteSelected').on('click', function () {
+                var selectedIds = $('.finding-checkbox:checked').map(function () { return $(this).val(); }).get();
                 if (selectedIds.length === 0) return;
                 Swal.fire({
                     title: 'Are you sure?', text: `You are about to delete ${selectedIds.length} findings.`,
@@ -555,7 +658,7 @@
             });
 
             // Filter event handler
-            $('#searchKeyword, #portFilter, #startDate, #endDate').on('input change', function() {
+            $('#searchKeyword, #portFilter, #startDate, #endDate').on('input change', function () {
                 loadFindings();
                 // If heatmap tab is active, refresh it
                 if ($('#heatmap-tab').hasClass('active')) {
@@ -566,14 +669,14 @@
 
             // Modal Close Handlers
             $('#custom-modal-close').on('click', () => $('#custom-modal-backdrop').hide());
-            $('#custom-modal-backdrop').on('click', function(e) { if (e.target === this) $(this).hide(); });
+            $('#custom-modal-backdrop').on('click', function (e) { if (e.target === this) $(this).hide(); });
 
             // Heatmap & Report Tab Handlers
-            $('#loadHeatmap').on('click', function() {
+            $('#loadHeatmap').on('click', function () {
                 var url = `/heatmap?v=${new Date().getTime()}&port=${encodeURIComponent($('#portFilter').val())}&start_date=${encodeURIComponent($('#startDate').val())}&end_date=${encodeURIComponent($('#endDate').val())}`;
                 $('#heatmapFrame').attr('src', url);
             });
-            $('#exportPdfButton').on('click', function() {
+            $('#exportPdfButton').on('click', function () {
                 var $button = $(this);
                 var $spinner = $('#exportSpinner');
                 var $message = $('#exportMessage');
@@ -597,6 +700,34 @@
                 });
             });
 
+            // AI Analysis Handler
+            $('#generateAiAnalysis').on('click', function () {
+                var $button = $(this);
+                var $spinner = $('#aiSpinner');
+                var $content = $('#aiContent');
+                var $output = $('#aiRawOutput');
+
+                $button.prop('disabled', true);
+                $content.hide();
+                $spinner.show();
+
+                $.get('/analyze')
+                    .done(function (data) {
+                        // Simple displaying of text. For better markdown support, we'd need a library like marked.js
+                        // But to minimize dependencies for now, we'll display as pre-wrap text.
+                        $output.text(data.analysis);
+                        $content.show();
+                    })
+                    .fail(function (jqXHR) {
+                        var errorMsg = jqXHR.responseJSON && jqXHR.responseJSON.error ? jqXHR.responseJSON.error : 'Failed to generate analysis.';
+                        Swal.fire('Error!', errorMsg, 'error');
+                    })
+                    .always(function () {
+                        $spinner.hide();
+                        $button.prop('disabled', false);
+                    });
+            });
+
             // --- Initial Page Load ---
             var savedTheme = localStorage.getItem('theme') || 'dark'; // Default to dark
             applyTheme(savedTheme);
@@ -604,4 +735,5 @@
         });
     </script>
 </body>
+
 </html>
