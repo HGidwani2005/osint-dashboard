@@ -4,3 +4,4 @@ osint.db
 report.pdf
 static/heatmap.html
 config.json
+.venv/

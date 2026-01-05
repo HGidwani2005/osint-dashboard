@@ -326,8 +326,6 @@ def analyze():
     1. Key Threats: Identify any high-risk findings (e.g., open sensitive ports, malicious IPs).
     2. Geographic Distribution: Where are the targets located?
     3. Recommendations: What specific actions should be taken?
-
-    Format your response in Markdown.
     
     Findings:
     {findings_text}
@@ -337,9 +335,10 @@ def analyze():
         return jsonify({'analysis': '# AI Analysis (Mock)\n\n**Threat Level:** Low\n\nThis is a simulated analysis using a dummy API key.\n- No high-risk findings detected.\n- **Recommendation**: Configure a real Gemini API key for actual analysis.'})
 
     try:
-        genai.configure(api_key=api_key)
-        model = genai.GenerativeModel('gemini-pro')
-        response = model.generate_content(prompt)
+        client = genai.Client(api_key=api_key)
+        response = client.models.generate_content(
+    model='gemini-2.5-flash', contents=prompt
+)
         return jsonify({'analysis': response.text})
     except Exception as e:
         return jsonify({'error': str(e)}), 500
